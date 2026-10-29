@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.cache/
+weights/
+*.safetensors
+*.pt
+*.pth
+*.bin
+*.log
+*.mp4
+!assets/cafe/*.mp4

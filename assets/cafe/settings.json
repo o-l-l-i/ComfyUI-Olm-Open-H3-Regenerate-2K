@@ -1,0 +1,107 @@
+{
+  "workflow": "../../workflows/video_refinement.json",
+  "prompt_file": "prompt.txt",
+  "source": {
+    "file": "source.mp4",
+    "width": 1344,
+    "height": 768,
+    "frames": 124,
+    "fps": 24,
+    "sha256": "106ffd1b915f1008e656f4c636e52e702abe345968b3ac29ba723426bc26fcb6"
+  },
+  "reference_output": {
+    "file": "refined_noise_050.mp4",
+    "width": 2560,
+    "height": 1440,
+    "frames": 124,
+    "fps": 24,
+    "sha256": "4939c7c7b36206f36a14fee1db0977f65ca268b01991d52f31b153add01e9b00",
+    "audio": "Original AAC packets copied from source.mp4 unchanged"
+  },
+  "refinement": {
+    "input": "Decoded source.mp4, with its soundtrack as fixed conditioning",
+    "width": 2560,
+    "height": 1440,
+    "schedule": "Custom",
+    "steps": 2,
+    "start_noise": 0.5,
+    "seed": 1766580932,
+    "input_size": "768p",
+    "window_frames": 121,
+    "vae_tile_size": 256,
+    "sparse_attention": true,
+    "comparison_variants": [
+      "Upscaler only",
+      0.5,
+      0.6,
+      0.7
+    ]
+  },
+  "models": {
+    "base_model": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+    "text_encoder": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+    "video_vae": "minimax_h3_video_vae_fp16.safetensors",
+    "audio_vae": "minimax_h3_audio_vae_fp32.safetensors",
+    "upscaler": "minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors",
+    "adapters": "Open-H3-Regenerate-2K"
+  },
+  "upscaler_sha256": "4f57821f5837f32f7142b67d815606dbd7550f194e5c769f7d6c3f83b146a5e6",
+  "comparison": {
+    "frame_indices_zero_based": [
+      24,
+      60,
+      96
+    ],
+    "baseline": "Decoded source.mp4 enlarged to 2560x1440 with Lanczos",
+    "crop_coordinates_at_2k": {
+      "face": {
+        "frame": 96,
+        "box": [
+          560,
+          80,
+          1152,
+          752
+        ]
+      },
+      "dog": {
+        "frame": 60,
+        "box": [
+          1392,
+          480,
+          1920,
+          1056
+        ]
+      },
+      "glass": {
+        "frame": 60,
+        "box": [
+          1088,
+          1000,
+          1472,
+          1392
+        ]
+      },
+      "sign": {
+        "frame": 60,
+        "box": [
+          2048,
+          128,
+          2432,
+          352
+        ]
+      }
+    },
+    "captures": "Source PNGs decoded from canonical source MP4; output PNGs saved from IMAGE tensors before H.264 encoding.",
+    "display": "Source resized to 2560x1440 with Lanczos. Output crops kept at native pixels. No per-variant alignment, sharpening or color adjustment."
+  },
+  "environment": {
+    "comfyui_revision": "fd7639f477050e5c25b68fc38a9c2a6b6d988211",
+    "comfyui": "0.43.0",
+    "gpu": "RTX 5090 32 GB",
+    "system_ram_gb": 128,
+    "torch": "2.13.0+cu130",
+    "comfy-kitchen": "0.2.40",
+    "comfy-aimdo": "0.6.0",
+    "comfyui-frontend-package": "1.57.6"
+  }
+}

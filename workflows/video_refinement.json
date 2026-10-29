@@ -1,0 +1,437 @@
+{
+  "id": "f6c5d897-3b61-410b-b514-02bc30cda2d3",
+  "revision": 0,
+  "last_node_id": 6,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "OlmOpenH3RefinerLoader",
+      "pos": [
+        20,
+        60
+      ],
+      "size": [
+        420,
+        202
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "refiner",
+          "type": "OLM_OPEN_H3_REFINER",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "OlmOpenH3RefinerLoader"
+      },
+      "widgets_values": [
+        "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "minimax_h3_video_vae_fp16.safetensors",
+        "minimax_h3_audio_vae_fp32.safetensors",
+        "minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors",
+        "Open-H3-Regenerate-2K",
+        "auto"
+      ],
+      "widgets_values_named": {
+        "base_model": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        "text_encoder": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "video_vae": "minimax_h3_video_vae_fp16.safetensors",
+        "audio_vae": "minimax_h3_audio_vae_fp32.safetensors",
+        "upscaler": "minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors",
+        "adapters": "Open-H3-Regenerate-2K",
+        "text_encoder_device": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "OlmOpenH3RefineVideo",
+      "pos": [
+        950,
+        60
+      ],
+      "size": [
+        450,
+        560
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 3
+        },
+        {
+          "name": "refiner",
+          "type": "OLM_OPEN_H3_REFINER",
+          "link": 1
+        },
+        {
+          "name": "conditioning",
+          "shape": 7,
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 4
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            6
+          ]
+        },
+        {
+          "name": "memory_info",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "OlmOpenH3RefineVideo"
+      },
+      "widgets_values": [
+        "A photorealistic continuous cinematic shot inside a small cafe on a rainy evening, matching the supplied first frame. A woman in her early thirties with a short dark bob, faint freckles and triangular silver drop earrings sits on a burgundy leather bench beside the window. She wears a charcoal textured wool coat over a muted deep-green satin blouse. Her cheek rests gently against her hand. A small black-and-white Boston Terrier with upright ears, a broad white facial blaze and a round collar tag sits upright beside her. Both faces are clearly visible and remain in focus. On the marble table are a speckled ceramic coffee cup and a ribbed water glass. Chrome window trim, rain droplets, the cafe sign and the wet street outside remain readable. Warm interior practical lights mix with cool blue street light. Preserve the woman's natural skin shading, freckles, facial proportions, earrings, the dog's markings, the clothing and the layout throughout the shot.\n\nThe camera makes a very slow, smooth physical dolly to camera-right, travelling only about ten centimetres during the whole shot. Keep approximately the same medium-close framing and distance, with both heads fully inside the image. The nearby table, subjects, window and distant street show slight natural parallax. Stable exposure and lighting. The woman blinks naturally once and turns her head by a few degrees toward the camera with a small relaxed smile, keeping her hand beside her cheek. The dog makes one small curious head tilt and settles. Subtle breathing and natural motion. One uninterrupted shot, no cuts, no handheld shake, no optical zoom, no focus pull, no added grain or captions.\n\nAudio: quiet cafe room tone and soft rain outside the window, with a faint distant ceramic cup clink. No speech, no intelligible voices, no music.",
+        2560,
+        1440,
+        "Custom",
+        2,
+        0.5,
+        1766580932,
+        "fixed",
+        256,
+        true,
+        24,
+        "768p",
+        121
+      ],
+      "widgets_values_named": {
+        "prompt": "A photorealistic continuous cinematic shot inside a small cafe on a rainy evening, matching the supplied first frame. A woman in her early thirties with a short dark bob, faint freckles and triangular silver drop earrings sits on a burgundy leather bench beside the window. She wears a charcoal textured wool coat over a muted deep-green satin blouse. Her cheek rests gently against her hand. A small black-and-white Boston Terrier with upright ears, a broad white facial blaze and a round collar tag sits upright beside her. Both faces are clearly visible and remain in focus. On the marble table are a speckled ceramic coffee cup and a ribbed water glass. Chrome window trim, rain droplets, the cafe sign and the wet street outside remain readable. Warm interior practical lights mix with cool blue street light. Preserve the woman's natural skin shading, freckles, facial proportions, earrings, the dog's markings, the clothing and the layout throughout the shot.\n\nThe camera makes a very slow, smooth physical dolly to camera-right, travelling only about ten centimetres during the whole shot. Keep approximately the same medium-close framing and distance, with both heads fully inside the image. The nearby table, subjects, window and distant street show slight natural parallax. Stable exposure and lighting. The woman blinks naturally once and turns her head by a few degrees toward the camera with a small relaxed smile, keeping her hand beside her cheek. The dog makes one small curious head tilt and settles. Subtle breathing and natural motion. One uninterrupted shot, no cuts, no handheld shake, no optical zoom, no focus pull, no added grain or captions.\n\nAudio: quiet cafe room tone and soft rain outside the window, with a faint distant ceramic cup clink. No speech, no intelligible voices, no music.",
+        "width": 2560,
+        "height": 1440,
+        "schedule": "Custom",
+        "schedule.steps": 2,
+        "schedule.start_noise": 0.5,
+        "seed": 1766580932,
+        "control_after_generate": "fixed",
+        "vae_tile_size": 256,
+        "sparse_attention": true,
+        "fps": 24,
+        "input_size": "768p",
+        "window_frames": 121
+      }
+    },
+    {
+      "id": 3,
+      "type": "LoadVideo",
+      "pos": [
+        20,
+        450
+      ],
+      "size": [
+        420,
+        100
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadVideo"
+      },
+      "widgets_values": [
+        "source.mp4",
+        "image"
+      ],
+      "widgets_values_named": {
+        "file": "source.mp4",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 4,
+      "type": "GetVideoComponents",
+      "pos": [
+        490,
+        450
+      ],
+      "size": [
+        330,
+        106
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            3
+          ]
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            4,
+            7
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "links": [
+            5,
+            8
+          ]
+        },
+        {
+          "name": "bit_depth",
+          "type": "COMBO",
+          "links": null
+        },
+        {
+          "name": "color_space",
+          "type": "COMBO",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetVideoComponents"
+      }
+    },
+    {
+      "id": 5,
+      "type": "CreateVideo",
+      "pos": [
+        1450,
+        60
+      ],
+      "size": [
+        330,
+        150
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 6
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 7
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CreateVideo"
+      },
+      "widgets_values": [
+        24,
+        "auto",
+        "sRGB",
+        "none"
+      ],
+      "widgets_values_named": {
+        "fps": 24,
+        "bit_depth": "auto",
+        "color_space": "sRGB",
+        "codec": "none"
+      }
+    },
+    {
+      "id": 6,
+      "type": "SaveVideo",
+      "pos": [
+        1830,
+        60
+      ],
+      "size": [
+        350,
+        210
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "links": null
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "OpenH3/cafe_noise_050",
+        "mp4",
+        "h264",
+        "re-encode",
+        16,
+        "auto"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "OpenH3/cafe_noise_050",
+        "format": "mp4",
+        "format.codec": "h264",
+        "format.codec.encoding": "re-encode",
+        "format.codec.encoding.crf": 16,
+        "codec": "auto"
+      }
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      1,
+      "OLM_OPEN_H3_REFINER"
+    ],
+    [
+      2,
+      3,
+      0,
+      4,
+      0,
+      "VIDEO"
+    ],
+    [
+      3,
+      4,
+      0,
+      2,
+      0,
+      "IMAGE"
+    ],
+    [
+      4,
+      4,
+      1,
+      2,
+      3,
+      "AUDIO"
+    ],
+    [
+      5,
+      4,
+      2,
+      2,
+      4,
+      "FLOAT"
+    ],
+    [
+      6,
+      2,
+      0,
+      5,
+      0,
+      "IMAGE"
+    ],
+    [
+      7,
+      4,
+      1,
+      5,
+      1,
+      "AUDIO"
+    ],
+    [
+      8,
+      4,
+      2,
+      5,
+      2,
+      "FLOAT"
+    ],
+    [
+      9,
+      5,
+      0,
+      6,
+      0,
+      "VIDEO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "frontendVersion": "1.55.14"
+  },
+  "version": 0.4
+}
