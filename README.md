@@ -184,6 +184,11 @@ video and does not require regenerating it.
   source frames and working memory. The `memory_info` output estimates this batch.
 - **64 GB system RAM can be tight**, especially with CPU text encoding.
 
+## Updates
+
+- **2026-10-30:** Fixed SwiGLU channel ordering when loading NVIDIA's adapters.
+  Demo media is from the initial release; changes in the tested clip were subtle.
+
 ## Credits and license
 
 - Model and recipe: [NVIDIA / Sana](https://github.com/NVlabs/Sana/tree/sol-engine/models/Open-H3-Regenerate-2K).

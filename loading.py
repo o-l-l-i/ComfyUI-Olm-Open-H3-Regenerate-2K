@@ -111,6 +111,7 @@ def adapter_target(name, rows):
 
 
 def lora_patches(state, native_state):
+    state = state.copy()
     key_map = {}
     consumed = set()
     for key, down in state.items():
@@ -127,6 +128,10 @@ def lora_patches(state, native_state):
         expected = (up.shape[0] * (3 if isinstance(destination, tuple) else 1), down.shape[1])
         if tuple(shape) != expected:
             raise ValueError(f"Open-H3 adapter does not match {native_key}: {tuple(shape)} != {expected}")
+        if base.endswith(".ff.net.0.proj"):
+            # Diffusers stores [value; gate]; native SwiGLU consumes [gate; value].
+            value, gate = up.chunk(2, dim=0)
+            state[up_key] = torch.cat((gate, value), dim=0)
         key_map[base] = destination
         consumed.update((key, up_key))
     if consumed != state.keys():
