@@ -46,6 +46,18 @@ def output_memory_gib(frames, width, height):
     return frames * width * height * 3 * 4 / 1024**3
 
 
+def resampled_frame_indices(count, fps):
+    if not math.isfinite(fps) or fps <= 0:
+        raise ValueError(f"Input fps must be finite and greater than zero; received {fps!r}")
+    if count < 1:
+        raise ValueError("Provide at least one video frame")
+    if fps == 24.0:
+        return range(count)
+    output_count = max(1, math.floor(count * 24 / fps + 0.5))
+    # Match frame centres without blending or motion interpolation.
+    return [min(count - 1, math.floor((i + 0.5) * fps / 24)) for i in range(output_count)]
+
+
 def validate_canvas(width, height):
     if min(width, height) < 256 or width % 32 or height % 32:
         raise ValueError("Output dimensions must be at least 256 and multiples of 32")
@@ -196,23 +208,25 @@ class Refiner:
     def frames(self, images, prompt, fps, width, height, seed, steps, start_noise,
                input_size="768p", window_frames=121, sparse=True, conditioning=None, audio=None):
         validate_canvas(width, height)
-        if not math.isfinite(fps) or not math.isclose(fps, 24.0, abs_tol=0.001):
-            raise ValueError("H3 refinement expects 24 fps; resample in your video loader first")
         if images.ndim != 4 or images.shape[-1] not in (3, 4) or not images.is_floating_point():
             raise ValueError("Provide an RGB/RGBA IMAGE batch of floating-point video frames")
-        plan = list(window_plan(len(images), window_frames))
+        indices = resampled_frame_indices(len(images), fps)
+        count = len(indices)
+        plan = list(window_plan(count, window_frames))
         context = aligned_frames(window_frames)
-        gib = output_memory_gib(len(images), width, height)
-        info = f"{len(images)} frames; {len(plan)} window(s); output IMAGE alone {gib:.2f} GiB. Model/working memory is additional."
+        gib = output_memory_gib(count, width, height)
+        info = f"{count} frames at 24 fps (input: {len(images)} at {fps:g} fps); {len(plan)} window(s); output IMAGE alone {gib:.2f} GiB. Model/working memory is additional."
         logger.info("Open-H3: %s", info)
         cond = self.conditioning(prompt, conditioning) if steps else None
-        output = torch.empty((len(images), height, width, 3), dtype=torch.float32,
+        output = torch.empty((count, height, width, 3), dtype=torch.float32,
                              device=model_management.intermediate_device())
         progress = utils.ProgressBar(len(plan))
         for i, (start, stop, context_stop) in enumerate(plan):
             model_management.throw_exception_if_processing_interrupted()
             logger.info("Open-H3 window %d/%d: frames %d-%d", i + 1, len(plan), start, stop - 1)
-            video = self.encode_images(images[start:context_stop], width, height, input_size, context)
+            pixels = images[start:context_stop] if fps == 24.0 else images[indices[start:context_stop]]
+            video = self.encode_images(pixels, width, height, input_size, context)
+            del pixels
             video = self.upscale(video, width, height)
             fixed_audio = self.encode_audio(audio, context_stop - start, context, start) if steps else None
             refined = self.sample(video, fixed_audio, cond, (seed + i) % 2**64, steps, start_noise, sparse)

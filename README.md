@@ -104,14 +104,17 @@ open_h3_models:
 
 Open the [video workflow](workflows/video_refinement.json):
 
-1. **Load Video → Get Video Components:** upload/select your 24 fps video.
+1. **Load Video → Get Video Components:** upload/select your video.
 2. **Open-H3 Refiner Loader (Olm):** select your local models and adapters.
 3. **Open-H3 Refine Video (Olm):** describe the scene and choose the output size.
-4. **Create Video → Save Video:** combine the result with the original audio.
+4. **Create Video → Save Video:** use the refiner's output `fps` and the original audio.
 
-- **24 fps input required.** Resample other frame rates in your loader first.
-- Frame count is preserved. Longer clips use independent windows and may show
-  visible boundaries. Up to 124 frames fit in one default window.
+- **Output is 24 fps.** Other input rates are converted by dropping/repeating
+  frames, preserving duration to the nearest output frame. No motion interpolation.
+- Exact 24 fps input keeps its frame count. Longer clips use independent windows
+  and may show visible boundaries. Up to 124 frames fit in one default window.
+- Older workflows: connect the refiner's new `fps` output to **Create Video**,
+  or set **Create Video** to **24**. Keep the actual input rate connected to the refiner.
 - Audio is fixed conditioning, not regenerated. Route it separately to Create Video.
 - The [native-latent workflow](workflows/native_latent_refinement.json) avoids
   re-encoding H3 video/AV latents on the 5–124-frame grids and returns images
@@ -186,6 +189,8 @@ video and does not require regenerating it.
 
 ## Updates
 
+- **2026-10-31:** Other input frame rates now convert to 24 fps by dropping/repeating
+  frames. The updated example connects the refiner's output `fps` to Create Video.
 - **2026-10-30:** Fixed SwiGLU channel ordering when loading NVIDIA's adapters.
   Demo media is from the initial release; changes in the tested clip were subtle.
 

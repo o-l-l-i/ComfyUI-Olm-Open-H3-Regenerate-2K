@@ -91,13 +91,15 @@ class OpenH3RefineVideo(io.ComfyNode):
     @classmethod
     def define_schema(cls):
         return io.Schema(node_id="OlmOpenH3RefineVideo", display_name="Open-H3 Refine Video (Olm)", category=CATEGORY,
-                         description="Generative refinement of 24 fps video. Frame count is preserved through independent windows; boundaries can be visible. Final IMAGE memory scales with the whole clip (121 frames at 2K ≈ 5 GiB).",
+                         description="Generative video refinement at 24 fps. Other input rates are converted by dropping/repeating frames. Independent windows can show visible boundaries. Final IMAGE memory scales with the whole clip (121 frames at 2K ≈ 5 GiB).",
                          inputs=[io.Image.Input("images"), *refinement_inputs(),
-                                 io.Float.Input("fps", default=24.0, min=1, max=120),
+                                 io.Float.Input("fps", default=24.0, min=1, max=120,
+                                                tooltip="Actual input frame rate. Other rates are converted to 24 fps by dropping/repeating frames, without motion interpolation. Connect output fps to Create Video."),
                                  io.Combo.Input("input_size", options=["768p", "576p"], default="768p"),
                                  io.Combo.Input("window_frames", options=[121, 90, 56, 22], default=121,
                                                 tooltip="Shorter windows reduce attention memory but can reduce quality. The model was tuned for the default ~5-second context.")],
-                         outputs=[io.Image.Output("images"), io.String.Output("memory_info")])
+                         outputs=[io.Image.Output("images"), io.String.Output("memory_info"),
+                                  io.Float.Output("fps", tooltip="Output frame rate: 24 fps. Connect to Create Video.")])
 
     @classmethod
     def execute(cls, images, refiner, prompt, fps, width, height, schedule, seed, input_size,
@@ -106,7 +108,7 @@ class OpenH3RefineVideo(io.ComfyNode):
         with Refiner(refiner.resolve(), refiner.text_encoder_device, vae_tile_size) as engine:
             images, info = engine.frames(images, prompt, fps, width, height, seed, steps, noise,
                                          input_size, int(window_frames), sparse_attention, conditioning, audio)
-        return io.NodeOutput(images, info)
+        return io.NodeOutput(images, info, 24.0)
 
 
 class OpenH3RefineLatent(io.ComfyNode):

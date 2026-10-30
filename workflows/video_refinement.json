@@ -108,6 +108,13 @@
           "name": "memory_info",
           "type": "STRING",
           "links": null
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "links": [
+            8
+          ]
         }
       ],
       "properties": {
@@ -221,8 +228,7 @@
           "name": "fps",
           "type": "FLOAT",
           "links": [
-            5,
-            8
+            5
           ]
         },
         {
@@ -406,7 +412,7 @@
     ],
     [
       8,
-      4,
+      2,
       2,
       5,
       2,
