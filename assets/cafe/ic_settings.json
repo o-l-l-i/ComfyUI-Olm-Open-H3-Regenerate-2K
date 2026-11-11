@@ -1,0 +1,104 @@
+{
+  "workflow": "../../workflows/ic_video_refinement.json",
+  "prompt_file": "prompt.txt",
+  "source": {
+    "file": "source.mp4",
+    "width": 1344,
+    "height": 768,
+    "frames": 124,
+    "fps": 24,
+    "sha256": "106ffd1b915f1008e656f4c636e52e702abe345968b3ac29ba723426bc26fcb6"
+  },
+  "output": {
+    "file": "ic_up3.mp4",
+    "width": 2560,
+    "height": 1440,
+    "frames": 124,
+    "fps": 24,
+    "sha256": "6bcd64e31e2bea7a45869916e0bddc707d2a86562ca673e74b841991ce23f2bd",
+    "audio": "Original source AAC packets copied unchanged"
+  },
+  "settings": {
+    "sampler": "up3",
+    "sharp_strength": 1.0,
+    "ic_strength": 1.0,
+    "seed": 1766580932,
+    "input_size": "768p",
+    "window_frames": 121,
+    "vae_tile_size": 256,
+    "sparse_attention": true,
+    "text_encoder_device": "auto"
+  },
+  "models": {
+    "base_model": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+    "text_encoder": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+    "video_vae": "minimax_h3_video_vae_fp16.safetensors",
+    "upscaler": "minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors",
+    "adapters": "Open-H3-Regenerate-2K-IC",
+    "text_encoder_device": "auto"
+  },
+  "comparison": {
+    "columns": [
+      "Source: Lanczos enlargement",
+      "up3 / Sharp 0 / IC 1",
+      "up3 / Sharp 0.5 / IC 1",
+      "up3 / Sharp 1 / IC 1"
+    ],
+    "frame_indices_zero_based": {
+      "face": 96,
+      "dog": 60,
+      "glass": 60,
+      "sign": 60
+    },
+    "crop_coordinates_at_2k": {
+      "face": {
+        "frame": 96,
+        "box": [
+          560,
+          80,
+          1152,
+          752
+        ]
+      },
+      "dog": {
+        "frame": 60,
+        "box": [
+          1392,
+          480,
+          1920,
+          1056
+        ]
+      },
+      "glass": {
+        "frame": 60,
+        "box": [
+          1088,
+          1000,
+          1472,
+          1392
+        ]
+      },
+      "sign": {
+        "frame": 60,
+        "box": [
+          2048,
+          128,
+          2432,
+          352
+        ]
+      }
+    },
+    "captures": "Output PNGs saved before video encoding. Source decoded and enlarged to 2560x1440 with Lanczos; same crop coordinates, no alignment or sharpening.",
+    "method": "Same source reference, conditioning, seed and VAE settings for all variants; only Sharp strength changes."
+  },
+  "reproduction": "Use the packaged source video and prompt. Outputs are illustrative, not a promise of bit-identical results across hardware or ComfyUI versions.",
+  "environment": {
+    "comfyui_revision": "fca60fe70e5b84c5c6b058263653d15cb3401e44",
+    "gpu": "RTX 5090 32 GB",
+    "system_ram_gb": 128,
+    "torch": "2.13.0+cu130",
+    "comfy-kitchen": "0.2.41",
+    "comfy-aimdo": "0.6.0",
+    "comfyui-frontend-package": "1.58.5"
+  }
+}

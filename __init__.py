@@ -3,7 +3,8 @@
 from comfy_api.latest import ComfyExtension, io
 
 from .loading import register_model_paths
-from .nodes import OpenH3RefinerLoader, OpenH3RefineLatent, OpenH3RefineVideo
+from .nodes import (OpenH3ICLoader, OpenH3ICRefineVideo, OpenH3RefinerLoader,
+                    OpenH3RefineLatent, OpenH3RefineVideo)
 
 
 class OpenH3Extension(ComfyExtension):
@@ -11,7 +12,7 @@ class OpenH3Extension(ComfyExtension):
         register_model_paths()
 
     async def get_node_list(self) -> list[type[io.ComfyNode]]:
-        return [OpenH3RefinerLoader, OpenH3RefineVideo, OpenH3RefineLatent]
+        return [OpenH3RefinerLoader, OpenH3RefineVideo, OpenH3RefineLatent, OpenH3ICLoader, OpenH3ICRefineVideo]
 
 
 async def comfy_entrypoint() -> ComfyExtension:

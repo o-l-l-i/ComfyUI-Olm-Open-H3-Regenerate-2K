@@ -285,12 +285,14 @@
         24,
         "auto",
         "sRGB",
+        "auto",
         "none"
       ],
       "widgets_values_named": {
         "fps": 24,
         "bit_depth": "auto",
         "color_space": "sRGB",
+        "chroma_subsampling": "auto",
         "codec": "none"
       }
     },
@@ -303,7 +305,7 @@
       ],
       "size": [
         350,
-        210
+        106
       ],
       "flags": {},
       "order": 6,
@@ -325,18 +327,14 @@
       "properties": {},
       "widgets_values": [
         "OpenH3/native_latent",
-        "mp4",
-        "h264",
-        "re-encode",
-        16,
+        "auto",
+        "auto",
         "auto"
       ],
       "widgets_values_named": {
         "filename_prefix": "OpenH3/native_latent",
-        "format": "mp4",
-        "format.codec": "h264",
-        "format.codec.encoding": "re-encode",
-        "format.codec.encoding.crf": 16,
+        "format": "auto",
+        "format.codec": "auto",
         "codec": "auto"
       }
     }

@@ -2,91 +2,174 @@
 
 Experimental ComfyUI nodes for NVIDIA's
 [Open-H3-Regenerate-2K](https://nvlabs.github.io/Sana/Open-H3-Regenerate-2K/).
-Upscale and generatively refine video, or refine existing MiniMax-H3 latents.
+Upscale and generatively refine video using the newer **IC / Ref2VA** recipe,
+or use the original **FL2VA** video and latent workflows.
 
 Created by [Olli Sorjonen](https://github.com/o-l-l-i) · [X](https://x.com/Olmirad)
 
-**Details can change:** faces, shading, jewelry, lettering and markings may be
-redrawn. Compare the result with your source when fidelity matters.
+- **Start with IC:** it uses the source video as a reference during refinement.
+- **Details can still change:** faces, shading, jewelry, lettering and markings
+  may be redrawn. Compare with your source when fidelity matters.
+- **IC setup includes a one-time script:** about **26 GB of network transfer**
+  creates a **185 MiB local timestep file**, in addition to the model downloads.
+- Tested on **Windows / RTX 5090 32 GB / 128 GB RAM**. Physical 16/24 GB cards
+  and other operating systems have not been validated.
+
+[IC example](#ic-café-example) · [Installation](#installation) ·
+[IC models and setup](#ic-models-and-setup) · [Usage](#usage) ·
+[Original method](#original-fl2va-method) · [Memory](#memory)
+
+## IC café example
+
+[Source, 1344×768](assets/cafe/source.mp4) ·
+[IC output, 2560×1440 — 13.2 MB](assets/cafe/ic_up3.mp4) ·
+[Settings](assets/cafe/ic_settings.json)
+
+Same café clip, **up3 / IC 1**, with Sharp 0, 0.5 and 1. The linked output uses
+**Sharp 1**. Click the images for full-size inspection.
+
+![Face: source enlargement, then IC with Sharp 0, 0.5 and 1](assets/cafe/ic_face_sharp_comparison.png)
+
+Frame 96 / 4.000 s. Compare eyelids, cheek shading, freckles and the earring.
+Sharp changes fine contrast and regenerated features; it is not just an output
+sharpening filter. A lower value is not necessarily more faithful.
+
+![Dog, glass and sign: source enlargement, then IC with Sharp 0, 0.5 and 1](assets/cafe/ic_detail_sharp_comparison.png)
+
+Frame 60 / 2.500 s. Fur and glass gain definition, while small shapes and shading
+also change. These are matching crops from PNGs saved before video compression;
+the source is enlarged with Lanczos, with no extra sharpening or alignment.
+Watch the clips too: stills cannot establish temporal consistency.
+
+To repeat the example, upload `assets/cafe/source.mp4` using the
+[IC workflow](workflows/ic_video_refinement.json), select your models and keep
+its saved settings: seed **1766580932**, **2560×1440**, **up3**, **IC 1 / Sharp 1**,
+768p input, 121-frame windows, VAE tiles 256 and sparse attention. The
+[café prompt](assets/cafe/prompt.txt) is already filled in. Results may vary with
+hardware and ComfyUI versions.
 
 ## Installation
 
-From your ComfyUI `custom_nodes` directory:
+1. Update ComfyUI and its dependencies. Native MiniMax-H3, V3 nodes and
+   block-sparse attention are required.
+2. From your ComfyUI `custom_nodes` directory, run:
 
-```sh
-git clone https://github.com/o-l-l-i/ComfyUI-Olm-Open-H3-Regenerate-2K.git
-```
+   ```sh
+   git clone https://github.com/o-l-l-i/ComfyUI-Olm-Open-H3-Regenerate-2K.git
+   ```
+
+3. Download the models and complete the one-time IC setup below.
+4. Restart ComfyUI, then drag the [IC workflow](workflows/ic_video_refinement.json)
+   into its canvas and select your local files in **Open-H3 IC Loader (Olm)**.
 
 - No extra Python packages are needed in the tested ComfyUI environment.
-- Use a recent ComfyUI with native MiniMax-H3, V3 nodes and block-sparse attention.
-  Keep its dependencies updated with ComfyUI itself.
-- Tested: Windows, ComfyUI 0.43.0, Comfy Kitchen 0.2.40, Python 3.13,
-  PyTorch 2.13 / CUDA 13, RTX 5090 (32 GB VRAM), 128 GB system RAM.
-- Physical 16/24 GB cards and other operating systems have not been validated.
+- Tested with ComfyUI 0.44.0-33, Kitchen 0.2.41, aimdo 0.6.0, frontend 1.58.5,
+  Python 3.13 and PyTorch 2.13 / CUDA 13.
+- Already installed? Update this custom node as well as ComfyUI, then restart.
+  Existing original-method workflows remain supported.
 
-## Models
+## IC models and setup
 
-Download these files from the three repositories below. Use the **pruned FL2VA** base.
+### 1. Download the model files
+
+Download the **individual files**, not whole repositories. Suggested destinations
+below are relative to **`ComfyUI/models/`**. Create missing folders. Existing
+copies of the shared text encoder, video VAE and upscaler can be reused.
 
 **From [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3):**
 
-- [`diffusion_models/`](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/diffusion_models): `minimax_h3_fl2va_pruned_int8_convrot.safetensors`
-- [`text_encoders/`](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/text_encoders): `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors`
-- [`vae/`](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/vae): `minimax_h3_video_vae_fp16.safetensors`
-- [`vae/`](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/vae): `minimax_h3_audio_vae_fp32.safetensors`
+| Repository folder | File | Put it in |
+| --- | --- | --- |
+| [diffusion_models](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/diffusion_models) | `minimax_h3_ref2va_pruned_int8_convrot.safetensors` | `diffusion_models/` |
+| [text_encoders](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/text_encoders) | `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` | `text_encoders/` |
+| [vae](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/vae) | `minimax_h3_video_vae_fp16.safetensors` | `vae/` |
 
-**From [LBH-123-AI/Minimax_h3_latent_Upscaler](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler):**
+**From [LBH-123-AI/Minimax_h3_latent_Upscaler](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler/tree/main/minimax_h3_latent_upscaler_3d_conv_v1):**
 
-- [`minimax_h3_latent_upscaler_3d_conv_v1/`](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler/tree/main/minimax_h3_latent_upscaler_3d_conv_v1): `minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors`
+- In `minimax_h3_latent_upscaler_3d_conv_v1/`, download
+  `minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors`.
+- Put it in `latent_upscale_models/`.
 
-**From [NVIDIA's Open-H3-Regenerate-2K adapters](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K/tree/main/lora), in `lora/`:**
+**From [NVIDIA's IC model repository](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K-IC/tree/54a7104b204fb46486cf85c2f600942118186d57):**
 
-- `open_h3_regenerate_2k_lora.safetensors`
-- `sharp_curve_branches.safetensors`
+| Repository folder | File | Put it in |
+| --- | --- | --- |
+| [lora](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K-IC/tree/54a7104b204fb46486cf85c2f600942118186d57/lora) | `open_h3_regenerate_2k_ic_lora.safetensors` | `open_h3_refiner/Open-H3-Regenerate-2K-IC/lora/` |
+| [lora](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K-IC/tree/54a7104b204fb46486cf85c2f600942118186d57/lora) | `minimax_h3_hyperflow_8step_v1.0.safetensors` | Same `lora/` folder |
+| [lora](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K-IC/tree/54a7104b204fb46486cf85c2f600942118186d57/lora) | `minimax_h3_lms_v1.0_r64.safetensors` | Same `lora/` folder |
+| [assets](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K-IC/tree/54a7104b204fb46486cf85c2f600942118186d57/assets) | `silence_audio_124f.safetensors` | `open_h3_refiner/Open-H3-Regenerate-2K-IC/assets/` |
 
-Only these two files are needed from NVIDIA's large model repository. Fetch
-`adaln_t_table.bin` separately with the helper below.
+IC does **not** need the original FL2VA model, audio VAE, original refiner bundle,
+separate Sharp table or Fast VAE v2. The source soundtrack is passed through.
 
-**Paths are not hard-coded.** Existing ComfyUI model folders and
-`extra_model_paths.yaml` work, including models on another drive.
+### 2. Prepare the timestep file once
 
-Suggested **local** locations under `ComfyUI/models/`:
+**Why:** the native pruned Ref2VA model needs additional timestep data for IC's
+HyperFlow sampling. The included script computes it from selected original
+checkpoint tensors. It does not quantize or modify your downloaded models.
 
-| Folder | File | GiB |
-| --- | --- | ---: |
-| `diffusion_models/` | `minimax_h3_fl2va_pruned_int8_convrot.safetensors` | 19.53 |
-| `text_encoders/` | `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` | 14.61 |
-| `vae/` | `minimax_h3_video_vae_fp16.safetensors` | 4.85 |
-| `vae/` | `minimax_h3_audio_vae_fp32.safetensors` | 0.56 |
-| `latent_upscale_models/` | `minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors` | 0.64 |
-| `open_h3_refiner/` | Adapter bundle below | 12.75 |
+- Run this **after downloading the IC files above**, using **ComfyUI's Python**.
+  A separate system Python may not have the required packages.
+- Needs internet for about **26 GB of transfer**, once per prepared bundle.
+  It reads selected data and does **not** save a full original checkpoint.
+- Creates **`ic_time.safetensors` (~185 MiB)** and a temporary/resumable
+  **`.ic_time_cache` (~185 MiB)** inside the bundle. Preparation runs on CPU.
+- This is separate from video generation: nodes load local files and never run
+  the download/conversion automatically.
 
-Keep the adapter bundle's internal structure:
-
-```text
-open_h3_refiner/Open-H3-Regenerate-2K/lora/
-    open_h3_regenerate_2k_lora.safetensors
-    sharp_curve_branches.safetensors
-    adaln_t_table.bin
-```
-
-Fetch the small Sharp timestep table from the extension directory, using your
-ComfyUI Python:
+**Windows venv installation:** open PowerShell in your **ComfyUI folder**
+(the folder containing `main.py` and `venv`), then run:
 
 ```powershell
-python scripts/fetch_sharp_table.py --output ../../models/open_h3_refiner/Open-H3-Regenerate-2K/lora/adaln_t_table.bin
+& .\venv\Scripts\python.exe .\custom_nodes\ComfyUI-Olm-Open-H3-Regenerate-2K\scripts\prepare_ic.py --bundle .\models\open_h3_refiner\Open-H3-Regenerate-2K-IC
 ```
 
-- The helper downloads only the table and header data, verifies the checksum, and
-  refuses a full-checkpoint response.
-- Already have the native INT8 Ref2VA checkpoint? Add
-  `--source-model PATH_TO_REF2VA.safetensors` to extract the table locally.
-- Upscalers can also live under registered diffusion-model roots. Adapter roots
-  can be `open_h3_refiner`, `diffusers`, or this extension's `weights` folder;
-  each root contains the bundle folder.
-- Restart ComfyUI after setup or path changes. Nodes load local files only.
+**Windows portable:** open PowerShell in the **portable folder**
+(containing `python_embeded` and `ComfyUI`), then run:
 
-Optional `extra_model_paths.yaml` example (fictional paths; replace with your own):
+```powershell
+& .\python_embeded\python.exe .\ComfyUI\custom_nodes\ComfyUI-Olm-Open-H3-Regenerate-2K\scripts\prepare_ic.py --bundle .\ComfyUI\models\open_h3_refiner\Open-H3-Regenerate-2K-IC
+```
+
+These commands assume the folder layout above. For models elsewhere, replace
+the `--bundle` value with your bundle's path, for example
+`--bundle "X:/my_models/Open-H3-Regenerate-2K-IC"`.
+
+**When finished**, the script prints `Prepared ... ic_time.safetensors`.
+Your bundle should contain:
+
+```text
+ComfyUI/models/open_h3_refiner/Open-H3-Regenerate-2K-IC/
+    lora/
+        open_h3_regenerate_2k_ic_lora.safetensors
+        minimax_h3_hyperflow_8step_v1.0.safetensors
+        minimax_h3_lms_v1.0_r64.safetensors
+    assets/
+        silence_audio_124f.safetensors
+    ic_time.safetensors
+```
+
+- **Interrupted?** Run the same command again; it reuses completed cached
+  projections. Leave `.ic_time_cache` in place until setup succeeds.
+- **Finished?** Keep `ic_time.safetensors`. You can delete `.ic_time_cache`.
+  Do not rerun setup for each clip or when switching between `up3` and `up4`.
+  The script refuses to overwrite an existing timestep file.
+- **Already have the original checkpoint?** Add
+  `--source-directory "X:/my_models/transformer_ref"` to use its original shards
+  and index offline. The native pruned INT8 file cannot replace those shards.
+
+### 3. Restart and select your models
+
+Restart ComfyUI and open the [IC workflow](workflows/ic_video_refinement.json).
+In **Open-H3 IC Loader (Olm)**, select the Ref2VA model, Qwen encoder, video VAE,
+upscaler and `Open-H3-Regenerate-2K-IC` bundle. Folder placement lets ComfyUI find
+the files; the loader selections determine which ones it uses.
+
+<details>
+<summary>Using models on another drive / extra_model_paths.yaml</summary>
+
+**Paths are not hard-coded.** Existing ComfyUI model roots work. This is an
+optional example with fictional paths; replace them with your own:
 
 ```yaml
 open_h3_models:
@@ -94,114 +177,156 @@ open_h3_models:
   open_h3_upscalers: X:/my_models/latent_upscale_models
 ```
 
-- `open_h3_refiner` points to the **parent of the bundle**, for example
-  `X:/my_models/Open-H3-Regenerate-2K/lora/` beneath the root above.
+- `open_h3_refiner` points to the **parent of the bundle**, so the IC bundle above
+  would be `X:/my_models/Open-H3-Regenerate-2K-IC/`.
 - `open_h3_upscalers` points to the folder containing the upscaler files.
-- The group name `open_h3_models` is arbitrary. Base models, text encoders and
-  VAEs use ComfyUI's usual path keys. No extra entry is needed for files already found.
+- The group name `open_h3_models` is arbitrary. Base models, encoders and VAEs
+  use ComfyUI's usual `diffusion_models`, `text_encoders` and `vae` keys.
+- No extra entry is needed for files already found. Restart after path changes.
+
+</details>
 
 ## Usage
 
-Open the [video workflow](workflows/video_refinement.json):
+1. **Load Video:** upload your source clip.
+2. **IC Loader:** select the files prepared above.
+3. **IC Refine Video:** choose the output size. Replace or clear the example's
+   café prompt; a scene description is optional. The enhancement instruction is automatic.
+4. **Create Video → Save Video:** keep the refiner's output `fps` connected,
+   and route the original audio from **Get Video Components** to **Create Video**.
 
-1. **Load Video → Get Video Components:** upload/select your video.
-2. **Open-H3 Refiner Loader (Olm):** select your local models and adapters.
-3. **Open-H3 Refine Video (Olm):** describe the scene and choose the output size.
-4. **Create Video → Save Video:** use the refiner's output `fps` and the original audio.
-
-- **Output is 24 fps.** Other input rates are converted by dropping/repeating
-  frames, preserving duration to the nearest output frame. No motion interpolation.
-- Exact 24 fps input keeps its frame count. Longer clips use independent windows
-  and may show visible boundaries. Up to 124 frames fit in one default window.
-- Older workflows: connect the refiner's new `fps` output to **Create Video**,
-  or set **Create Video** to **24**. Keep the actual input rate connected to the refiner.
-- Audio is fixed conditioning, not regenerated. Route it separately to Create Video.
-- The [native-latent workflow](workflows/native_latent_refinement.json) avoids
-  re-encoding H3 video/AV latents on the 5–124-frame grids and returns images
-  plus AV latents. Replace its saved-latent inputs with your files; connect the
-  original soundtrack for video with sound. Use the frame node for longer clips.
-
-| Setting | Notes |
+| Setting | Starting point / effect |
 | --- | --- |
-| `schedule` | Start with **Custom / 2 steps / noise 0.5**. NVIDIA 2/3-step presets and **Upscaler only** are also available. |
-| Width / height | At least 256 px, multiples of 32. Match your source aspect ratio; frames are resized/center-cropped. |
-| `input_size` | 768p default; 576p is also available. |
-| `window_frames` | 121 default; 90, 56 or 22 reduce context and working memory. Quality may change. |
-| `vae_tile_size` | 256 default. Smaller 192/128 tiles reduce working memory but can affect texture and seams. |
-| `text_encoder_device` | `auto` or `cpu`. CPU encoding is slower and uses substantial system RAM. |
-| `conditioning` | Optional H3 conditioning bypasses internal text encoding. |
-| `sparse_attention` | Enabled by default. Dense attention can use much more memory. |
+| `sampler` | **up3**, three Euler steps. `up4` uses four steps and higher starting noise. |
+| `ic_strength` | **1**. Scales the IC adapter; lower is not necessarily more faithful. |
+| `sharp_strength` | **1**; try **0.5** or **0** for comparison. Changes only LMS Sharp. |
+| Width / height | Multiples of 32, at least 256. Match the source aspect ratio; input is resized/center-cropped. |
+| `input_size` | **768p**; 576p is also available. |
+| `window_frames` | **121**; 90, 56 or 22 reduce context and working memory. |
+| `vae_tile_size` | **256**; 192/128 reduce working memory but may change texture/seams. |
+| `text_encoder_device` | **auto**; CPU encoding is slower and uses substantial RAM. |
+| `sparse_attention` | **On**. Dense attention can use much more memory. |
 
-## Café example
+- Output is **24 fps**. Other input rates use frame dropping/repeating, preserving
+  duration to the nearest output frame. No motion interpolation.
+- Up to **124 frames** fit in one default window. Longer clips use independent
+  windows and **may show seams**; there is no temporal blending.
+- IC uses fixed silent audio internally; it does not generate or refine your soundtrack.
+- Start with **IC 1 / Sharp 1 / up3**. Compare faces, jewelry and lettering with
+  your source, keeping the seed and VAE tiles fixed while changing one control.
+- In this café test, IC 0.75/1/1.25 had no consistent fidelity winner. `up4` changed
+  details without a clear fidelity gain and took about 22% longer than `up3`.
 
-[Source, 1344×768](assets/cafe/source.mp4) ·
-[Refined 2K, noise 0.5](assets/cafe/refined_noise_050.mp4)
+<details>
+<summary>How this compares with NVIDIA's IC recipe</summary>
 
-The slow camera move, faces, fabric, glass and signage provide different details
-to inspect. Compare against the **source video**. Watch the clips for motion
-artifacts—stills cannot show temporal consistency.
+- Same published `up3` schedule: **0.834942 → 0.696852 → 0.468753 → 0**.
+- Same `up4` schedule: **0.923077 → 0.834942 → 0.696852 → 0.468753 → 0**.
+- CFG 1 (guidance off), HyperFlow strength fixed at 1, IC and Sharp default to 1.
+  IC strength is adjustable here; at zero, the Ref2VA reference, HyperFlow and any
+  Sharp remain active. This does not switch to the original FL2VA method.
+- Native ComfyUI INT8 model, quantized Qwen encoder and offloading; precomputed
+  timestep projections for the fixed schedules.
+- Standard **FP16 tiled video VAE**, with mean encoding. NVIDIA's reference
+  samples the VAE posterior and defaults to Fast VAE v2. Outputs can differ.
+- Fast VAE v2, custom IC schedules and eight-step mode are not included.
 
-![Café source on the left and noise-0.5 refinement on the right](assets/cafe/frame_comparison.png)
-
-Frame 24 / 1.000 s. Source enlarged with Lanczos for display; output at 2K.
-Click the images for full-size inspection.
-
-![Face crops: source, upscale-only, and noise 0.5, 0.6 and 0.7](assets/cafe/face_noise_comparison.png)
-
-Frame 96 / 4.000 s. Upscale-only already changes some eyelid, mouth and cheek
-shading. Diffusion adds texture while also redrawing small features.
-
-![Dog, glass and sign crops across the same five variants](assets/cafe/detail_noise_comparison.png)
-
-Frame 60 / 2.500 s. Check eye/muzzle shapes, glass ribs and letter edges.
-Output crops are lossless PNGs before video encoding, with identical crop
-coordinates and no extra sharpening or individual alignment.
-
-- Start at **0.5**, and compare with **Upscaler only**. Both can change details.
-- Try **0.6 / 0.7** for stronger regeneration; lower noise if shapes drift.
-  Keep the seed and VAE tiles fixed while comparing.
-To sanity-check your setup:
-
-1. Open the [video workflow](workflows/video_refinement.json), upload
-   `assets/cafe/source.mp4` in **Load Video**, and select your installed models.
-2. Keep the supplied café prompt, seed **1766580932**, 2560×1440, 2 steps,
-   noise **0.5**, 768p input, 121-frame windows, VAE tiles 256 and sparse attention.
-3. Compare with the packaged refined clip and images at frames **24, 60 and 96**
-   (zero-based). Hardware and ComfyUI versions can affect the result; identical
-   pixels are not guaranteed.
-
-[Prompt](assets/cafe/prompt.txt) · [Settings](assets/cafe/settings.json).
-The source clip was generated with MiniMax-H3; the workflow refines this supplied
-video and does not require regenerating it.
+</details>
 
 ## Memory
 
 - Start with short clips. Tested on **32 GB VRAM / 128 GB RAM**; smaller cards
   remain unvalidated. ComfyUI manages offloading between stages.
+- A 124-frame 2K IC workflow took **4m10s** end to end on the 5090, peaking at
+  **28.8 GiB total GPU usage** and **35.3 GiB resident RAM** (66.5 GiB Windows
+  private commitment), with sparse attention and `--reserve-vram 6`.
+  This measurement used ComfyUI 0.44.0-12; it is not a minimum VRAM requirement.
 - For less working memory, try **22-frame windows**, **128 px VAE tiles**, lower
-  output resolution, and CPU text encoding or supplied conditioning.
-- Reducing steps mainly saves time. Dynamic loading can fill available VRAM;
-  observed usage is not a fixed minimum requirement.
-- **Shorter windows do not reduce the final image batch's RAM:** about **5 GiB for
-  121 frames at 2K**, or **59 GiB for one minute at 24 fps**, before models,
-  source frames and working memory. The `memory_info` output estimates this batch.
+  output resolution and CPU text encoding. Reducing steps mainly saves time.
+- **Shorter windows do not reduce the final image batch's RAM:** about **5.1 GiB
+  for 124 frames at 2K**, or **59 GiB for one minute**, before models, source frames
+  and working memory. The `memory_info` output estimates this batch.
 - **64 GB system RAM can be tight**, especially with CPU text encoding.
+
+## Original FL2VA method
+
+The original nodes remain available for comparison and existing workflows:
+[video refinement](workflows/video_refinement.json) ·
+[native latent refinement](workflows/native_latent_refinement.json).
+IC's setup and adapters are separate; you do not need both methods installed.
+
+<details>
+<summary>Original model downloads and setup</summary>
+
+Reuse the Qwen encoder, FP16 video VAE and BF16 upscaler listed above. Also download:
+
+| Repository / folder | File | Destination under ComfyUI/models/ |
+| --- | --- | --- |
+| [Comfy-Org/MiniMax-H3 / diffusion_models](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/diffusion_models) | `minimax_h3_fl2va_pruned_int8_convrot.safetensors` | `diffusion_models/` |
+| [Comfy-Org/MiniMax-H3 / vae](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main/vae) | `minimax_h3_audio_vae_fp32.safetensors` | `vae/` |
+| [NVIDIA original / lora](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K/tree/main/lora) | `open_h3_regenerate_2k_lora.safetensors` | `open_h3_refiner/Open-H3-Regenerate-2K/lora/` |
+| [NVIDIA original / lora](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K/tree/main/lora) | `sharp_curve_branches.safetensors` | Same `lora/` folder |
+
+Fetch the small Sharp table separately, once. For a venv installation, run from
+your **ComfyUI folder** using its Python:
+
+```powershell
+& .\venv\Scripts\python.exe .\custom_nodes\ComfyUI-Olm-Open-H3-Regenerate-2K\scripts\fetch_sharp_table.py --output .\models\open_h3_refiner\Open-H3-Regenerate-2K\lora\adaln_t_table.bin
+```
+
+For portable installs, use `python_embeded/python.exe` and the `ComfyUI/` path
+prefix as in the IC setup command. The helper fetches only the table/header,
+checks its checksum and refuses a full-checkpoint response. If you already have
+the native INT8 Ref2VA model, add `--source-model "PATH_TO_REF2VA.safetensors"`
+to extract the table locally. Restart ComfyUI afterward.
+
+Select **Refiner Loader** and **Refine Video** for this method. Start with
+**Custom / 2 steps / noise 0.5**; compare with **Upscaler only**. Try 0.6/0.7 for
+stronger regeneration and lower noise if shapes drift. NVIDIA presets are also available.
+
+The native-latent workflow avoids re-encoding H3 video/AV latents on the
+5–124-frame grids and returns images plus AV latents. Select your saved latents
+and connect the original soundtrack for sound. Use the frame node for longer clips.
+
+</details>
+
+<details>
+<summary>Original café results — FL2VA, not IC</summary>
+
+[Source](assets/cafe/source.mp4) ·
+[Original 2K output, noise 0.5](assets/cafe/refined_noise_050.mp4) ·
+[Settings](assets/cafe/settings.json)
+
+![Original method: source enlargement and noise-0.5 refinement, frame 24](assets/cafe/frame_comparison.png)
+
+![Original method: face at frame 96, source, upscale-only, noise 0.5, 0.6 and 0.7](assets/cafe/face_noise_comparison.png)
+
+Upscale-only already changes some eyelid, mouth and cheek shading. Diffusion
+adds texture while redrawing small features.
+
+![Original method: dog, glass and sign at frame 60, same five variants](assets/cafe/detail_noise_comparison.png)
+
+These images and the original output are retained from the first release.
+The later SwiGLU correction produced only subtle differences in this clip.
+
+</details>
 
 ## Updates
 
-- **2026-10-31:** Other input frame rates now convert to 24 fps by dropping/repeating
-  frames. The updated example connects the refiner's output `fps` to Create Video.
+- **IC update:** separate Ref2VA loader/refinement nodes, adjustable IC and Sharp
+  strengths, up3/up4 sampling, one-time timestep preparation and IC café examples.
+  Original workflows also have updated Create Video widget settings.
+- **2026-10-31:** Input frame rates convert to 24 fps by dropping/repeating frames.
 - **2026-10-30:** Fixed SwiGLU channel ordering when loading NVIDIA's adapters.
-  Demo media is from the initial release; changes in the tested clip were subtle.
 
 ## Credits and license
 
 - Model and recipe: [NVIDIA / Sana](https://github.com/NVlabs/Sana/tree/sol-engine/models/Open-H3-Regenerate-2K).
 - Native H3: [ComfyUI](https://github.com/Comfy-Org/ComfyUI).
 - Learned upscaler: [LBH-123-AI](https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler).
-- The adapter includes LightX2V Turbo and LMS Sharp; their terms are linked from
-  the publisher's model card.
+- Original adapter bundle: LightX2V FL2VA Turbo and LMS Sharp.
+- IC recipe: HyperFlow, the IC LoRA and separately adjustable LMS Sharp.
 
-Original integration code is source-available under [LICENSE.txt](LICENSE.txt).
+Integration code is source-available under [LICENSE.txt](LICENSE.txt).
 See [third-party notices](THIRD_PARTY_NOTICES.md) for attribution. Model licenses
-are separate; weights and the Sharp table are not bundled.
+are separate; weights, the Sharp table and derived timestep data are not bundled.

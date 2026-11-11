@@ -1,0 +1,416 @@
+{
+  "id": "e87d6ceb-2a80-47e3-871f-4e430eef96ec",
+  "revision": 0,
+  "last_node_id": 6,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "OlmOpenH3ICLoader",
+      "pos": [
+        20,
+        60
+      ],
+      "size": [
+        420,
+        188
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "refiner",
+          "type": "OLM_OPEN_H3_IC_REFINER",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "OlmOpenH3ICLoader"
+      },
+      "widgets_values": [
+        "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "minimax_h3_video_vae_fp16.safetensors",
+        "minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors",
+        "Open-H3-Regenerate-2K-IC",
+        "auto"
+      ],
+      "widgets_values_named": {
+        "base_model": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+        "text_encoder": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "video_vae": "minimax_h3_video_vae_fp16.safetensors",
+        "upscaler": "minimax_h3_latent_upscaler_3d_conv_v1_bf16.safetensors",
+        "adapters": "Open-H3-Regenerate-2K-IC",
+        "text_encoder_device": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "OlmOpenH3ICRefineVideo",
+      "pos": [
+        950,
+        60
+      ],
+      "size": [
+        450,
+        480
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 3
+        },
+        {
+          "name": "refiner",
+          "type": "OLM_OPEN_H3_IC_REFINER",
+          "link": 1
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            6
+          ]
+        },
+        {
+          "name": "memory_info",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "links": [
+            8
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "OlmOpenH3ICRefineVideo"
+      },
+      "widgets_values": [
+        "A photorealistic continuous cinematic shot inside a small cafe on a rainy evening, matching the supplied first frame. A woman in her early thirties with a short dark bob, faint freckles and triangular silver drop earrings sits on a burgundy leather bench beside the window. She wears a charcoal textured wool coat over a muted deep-green satin blouse. Her cheek rests gently against her hand. A small black-and-white Boston Terrier with upright ears, a broad white facial blaze and a round collar tag sits upright beside her. Both faces are clearly visible and remain in focus. On the marble table are a speckled ceramic coffee cup and a ribbed water glass. Chrome window trim, rain droplets, the cafe sign and the wet street outside remain readable. Warm interior practical lights mix with cool blue street light. Preserve the woman's natural skin shading, freckles, facial proportions, earrings, the dog's markings, the clothing and the layout throughout the shot.\n\nThe camera makes a very slow, smooth physical dolly to camera-right, travelling only about ten centimetres during the whole shot. Keep approximately the same medium-close framing and distance, with both heads fully inside the image. The nearby table, subjects, window and distant street show slight natural parallax. Stable exposure and lighting. The woman blinks naturally once and turns her head by a few degrees toward the camera with a small relaxed smile, keeping her hand beside her cheek. The dog makes one small curious head tilt and settles. Subtle breathing and natural motion. One uninterrupted shot, no cuts, no handheld shake, no optical zoom, no focus pull, no added grain or captions.\n\nAudio: quiet cafe room tone and soft rain outside the window, with a faint distant ceramic cup clink. No speech, no intelligible voices, no music.",
+        24,
+        2560,
+        1440,
+        1766580932,
+        "fixed",
+        1.0,
+        "768p",
+        121,
+        256,
+        true,
+        1.0,
+        "up3"
+      ],
+      "widgets_values_named": {
+        "prompt": "A photorealistic continuous cinematic shot inside a small cafe on a rainy evening, matching the supplied first frame. A woman in her early thirties with a short dark bob, faint freckles and triangular silver drop earrings sits on a burgundy leather bench beside the window. She wears a charcoal textured wool coat over a muted deep-green satin blouse. Her cheek rests gently against her hand. A small black-and-white Boston Terrier with upright ears, a broad white facial blaze and a round collar tag sits upright beside her. Both faces are clearly visible and remain in focus. On the marble table are a speckled ceramic coffee cup and a ribbed water glass. Chrome window trim, rain droplets, the cafe sign and the wet street outside remain readable. Warm interior practical lights mix with cool blue street light. Preserve the woman's natural skin shading, freckles, facial proportions, earrings, the dog's markings, the clothing and the layout throughout the shot.\n\nThe camera makes a very slow, smooth physical dolly to camera-right, travelling only about ten centimetres during the whole shot. Keep approximately the same medium-close framing and distance, with both heads fully inside the image. The nearby table, subjects, window and distant street show slight natural parallax. Stable exposure and lighting. The woman blinks naturally once and turns her head by a few degrees toward the camera with a small relaxed smile, keeping her hand beside her cheek. The dog makes one small curious head tilt and settles. Subtle breathing and natural motion. One uninterrupted shot, no cuts, no handheld shake, no optical zoom, no focus pull, no added grain or captions.\n\nAudio: quiet cafe room tone and soft rain outside the window, with a faint distant ceramic cup clink. No speech, no intelligible voices, no music.",
+        "fps": 24,
+        "width": 2560,
+        "height": 1440,
+        "seed": 1766580932,
+        "control_after_generate": "fixed",
+        "sharp_strength": 1.0,
+        "input_size": "768p",
+        "window_frames": 121,
+        "vae_tile_size": 256,
+        "sparse_attention": true,
+        "ic_strength": 1.0,
+        "sampler": "up3"
+      }
+    },
+    {
+      "id": 3,
+      "type": "LoadVideo",
+      "pos": [
+        20,
+        450
+      ],
+      "size": [
+        420,
+        100
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadVideo"
+      },
+      "widgets_values": [
+        "source.mp4",
+        "image"
+      ],
+      "widgets_values_named": {
+        "file": "source.mp4",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 4,
+      "type": "GetVideoComponents",
+      "pos": [
+        490,
+        450
+      ],
+      "size": [
+        330,
+        106
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            3
+          ]
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            7
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "links": [
+            5
+          ]
+        },
+        {
+          "name": "bit_depth",
+          "type": "COMBO",
+          "links": null
+        },
+        {
+          "name": "color_space",
+          "type": "COMBO",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetVideoComponents"
+      }
+    },
+    {
+      "id": 5,
+      "type": "CreateVideo",
+      "pos": [
+        1450,
+        60
+      ],
+      "size": [
+        330,
+        180
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 6
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 7
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CreateVideo"
+      },
+      "widgets_values": [
+        24,
+        "auto",
+        "sRGB",
+        "auto",
+        "none"
+      ],
+      "widgets_values_named": {
+        "fps": 24,
+        "bit_depth": "auto",
+        "color_space": "sRGB",
+        "codec": "none",
+        "chroma_subsampling": "auto"
+      }
+    },
+    {
+      "id": 6,
+      "type": "SaveVideo",
+      "pos": [
+        1830,
+        60
+      ],
+      "size": [
+        350,
+        106
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "links": null
+        }
+      ],
+      "properties": {},
+      "widgets_values": [
+        "OpenH3/IC",
+        "auto",
+        "auto"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "OpenH3/IC",
+        "format": "auto",
+        "format.codec": "auto"
+      }
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      1,
+      "OLM_OPEN_H3_IC_REFINER"
+    ],
+    [
+      2,
+      3,
+      0,
+      4,
+      0,
+      "VIDEO"
+    ],
+    [
+      3,
+      4,
+      0,
+      2,
+      0,
+      "IMAGE"
+    ],
+    [
+      5,
+      4,
+      2,
+      2,
+      2,
+      "FLOAT"
+    ],
+    [
+      6,
+      2,
+      0,
+      5,
+      0,
+      "IMAGE"
+    ],
+    [
+      7,
+      4,
+      1,
+      5,
+      1,
+      "AUDIO"
+    ],
+    [
+      8,
+      2,
+      2,
+      5,
+      2,
+      "FLOAT"
+    ],
+    [
+      9,
+      5,
+      0,
+      6,
+      0,
+      "VIDEO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "frontendVersion": "1.55.14"
+  },
+  "version": 0.4
+}

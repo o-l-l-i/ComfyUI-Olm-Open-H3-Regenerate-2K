@@ -10,9 +10,14 @@ unused attention and temporal chunking, and replace inference dropout with an
 identity while preserving checkpoint keys.
 
 The adapter recipe and sampling schedule follow NVIDIA's same source snapshot.
+The IC path follows NVIDIA's [IC source](https://github.com/NVlabs/Sana/tree/1e3c9c27ce56ca03b203cff9f63bed225a1599cd/models/Open-H3-Regenerate-2K/IC),
+including the fixed HyperFlow schedule and current/endpoint timestep conditioning.
+The setup helper computes compact projections from external model weights;
+neither those derived tensors nor model weights are distributed with the code.
 ComfyUI's model, text encoder, VAE, sampler, quantization, and sparse attention
 implementations are imported from the user's installation.
 
 Weights are not distributed with this project. Model and component licenses are
 separate from the integration code; see the
-[publisher's model card](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K).
+[original model card](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K)
+and [IC model card](https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K-IC).

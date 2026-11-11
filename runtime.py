@@ -167,7 +167,7 @@ class Refiner:
         finally:
             self.offload("video_vae")
 
-    def encode_images(self, images, width, height, input_size, context_frames):
+    def prepare_images(self, images, width, height, input_size, context_frames):
         iw, ih = input_canvas(width, height, input_size)
         pixels = utils.common_upscale(images[..., :3].movedim(-1, 1).float().cpu(), iw, ih,
                                       "bilinear", "center").movedim(1, -1).clone()
@@ -175,6 +175,10 @@ class Refiner:
             raise ValueError("Video contains non-finite values")
         if len(pixels) < context_frames:
             pixels = torch.cat([pixels, pixels[-1:].expand(context_frames - len(pixels), -1, -1, -1)])
+        return pixels
+
+    def encode_images(self, images, width, height, input_size, context_frames):
+        pixels = self.prepare_images(images, width, height, input_size, context_frames)
         try:
             return self.video_vae().encode(pixels).float().cpu()
         finally:
@@ -284,6 +288,10 @@ def refinement_sigmas(steps=3, start_sigma=None):
 
 def refine_latents(model, conditioning, video, audio, seed, steps=3, sparse=True, start_sigma=None):
     sigmas = refinement_sigmas(steps, start_sigma)
+    return sample_latents(model, conditioning, video, audio, seed, sigmas, sparse)
+
+
+def sample_latents(model, conditioning, video, audio, seed, sigmas, sparse=True):
     patched = model
     if sparse:
         patched = apply_block_sparse_attention(
@@ -297,7 +305,7 @@ def refine_latents(model, conditioning, video, audio, seed, steps=3, sparse=True
     latent = NestedTensor([video.float().cpu(), audio.float().cpu()])
     noises = NestedTensor([noise, torch.zeros_like(audio, device="cpu")])
     mask = NestedTensor([torch.ones_like(video, device="cpu"), torch.zeros_like(audio, device="cpu")])
-    progress = utils.ProgressBar(steps)
+    progress = utils.ProgressBar(len(sigmas) - 1)
 
     def callback(step, x0, x, total):
         model_management.throw_exception_if_processing_interrupted()
@@ -305,7 +313,7 @@ def refine_latents(model, conditioning, video, audio, seed, steps=3, sparse=True
 
     try:
         result = sample.sample_custom(
-            patched, noises, 1.0, samplers.ksampler("euler"), torch.tensor(sigmas),
+            patched, noises, 1.0, samplers.ksampler("euler"), torch.as_tensor(sigmas, dtype=torch.float32, device="cpu"),
             conditioning, [], latent, noise_mask=mask, callback=callback, seed=seed,
         )
         video_out, audio_out = result.unbind()

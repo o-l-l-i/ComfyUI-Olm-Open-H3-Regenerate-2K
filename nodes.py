@@ -2,11 +2,13 @@
 
 from comfy_api.latest import io
 
-from .loading import ModelSelection, bundle_names, model_names
+from .ic import ICRefiner
+from .loading import ICModelSelection, ModelSelection, bundle_names, ic_bundle_names, model_names
 from .runtime import Refiner
 
 
 HANDLE = io.Custom("OLM_OPEN_H3_REFINER")
+IC_HANDLE = io.Custom("OLM_OPEN_H3_IC_REFINER")
 CATEGORY = "Olm/Open-H3 Refiner"
 MODEL_HINTS = {
     "base_model": ("minimax_h3_fl2va_pruned_int8_convrot.safetensors", "diffusion_models", "Comfy-Org/MiniMax-H3"),
@@ -17,9 +19,11 @@ MODEL_HINTS = {
 }
 
 
-def model_input(kind, preferred):
+def model_input(kind, preferred, variant="fl2va"):
     example, folder, source = MODEL_HINTS[kind]
-    names = model_names(kind) or [f"(missing: {example})"]
+    if kind == "base_model":
+        example = example.replace("fl2va", variant)
+    names = model_names(kind, variant) or [f"(missing: {example})"]
     default = next((n for n in names if preferred in n), names[0])
     tooltip = (f"Recommended file: {example}\nSource: https://huggingface.co/{source}\n"
                f"Place in ComfyUI/models/{folder}/ or a registered extra_model_paths.yaml location. "
@@ -127,3 +131,65 @@ class OpenH3RefineLatent(io.ComfyNode):
             images, latent, info = engine.native(latent, prompt, width, height, seed, steps, noise,
                                                  sparse_attention, conditioning, audio)
         return io.NodeOutput(images, latent, info)
+
+
+class OpenH3ICLoader(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        bundles = ic_bundle_names() or ["(missing: Open-H3-Regenerate-2K-IC adapters)"]
+        return io.Schema(node_id="OlmOpenH3ICLoader", display_name="Open-H3 IC Loader (Olm)", category=CATEGORY,
+                         description="Select pruned Ref2VA models and the IC bundle. Prepare timestep data once with scripts/prepare_ic.py. No automatic downloads.",
+                         inputs=[model_input("base_model", "int8_convrot", "ref2va"),
+                                 model_input("text_encoder", "nvfp4_awq"), model_input("video_vae", "fp16"),
+                                 model_input("upscaler", "bf16"), io.Combo.Input("adapters", options=bundles,
+                                     tooltip="Source: https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K-IC\n"
+                                             "IC, HyperFlow and LMS Sharp adapters in lora/; silence_audio_124f.safetensors in assets/; "
+                                             "prepared ic_time.safetensors at the bundle root. Use the existing open_h3_refiner model paths."),
+                                 io.Combo.Input("text_encoder_device", options=["auto", "cpu"], default="auto", advanced=True,
+                                                tooltip="CPU text encoding reduces VRAM demand but is slower and requires substantial RAM.")],
+                         outputs=[IC_HANDLE.Output("refiner")])
+
+    @classmethod
+    def execute(cls, base_model, text_encoder, video_vae, upscaler, adapters, text_encoder_device="auto"):
+        selection = ICModelSelection(base_model, text_encoder, video_vae, upscaler, adapters, text_encoder_device)
+        selection.resolve()
+        return io.NodeOutput(selection)
+
+
+class OpenH3ICRefineVideo(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id="OlmOpenH3ICRefineVideo", display_name="Open-H3 IC Refine Video (Olm)", category=CATEGORY,
+                         description="IC refinement with the draft as a clean reference, video-aware prompt encoding and published three/four-step HyperFlow schedules. Longer videos use independent windows with possible visible boundaries. Route original audio directly to Create Video.",
+                         inputs=[io.Image.Input("images"), IC_HANDLE.Input("refiner"),
+                                 io.String.Input("prompt", multiline=True, default="",
+                                                 tooltip="Optional scene description. The enhancement instruction and video reference are supplied automatically."),
+                                 io.Float.Input("fps", default=24., min=1, max=120,
+                                                tooltip="Actual input rate; drop/repeat conversion produces 24 fps output."),
+                                 io.Int.Input("width", default=2560, min=256, max=4096, step=32),
+                                 io.Int.Input("height", default=1440, min=256, max=4096, step=32),
+                                 io.Int.Input("seed", default=0, min=0, max=0xFFFFFFFFFFFFFFFF, control_after_generate=True),
+                                 io.Float.Input("sharp_strength", default=1., min=0., max=2., step=.1,
+                                                tooltip="LMS Sharp strength. 1 is NVIDIA's default; 0 disables it. This is separate from IC LoRA strength."),
+                                 io.Combo.Input("input_size", options=["768p", "576p"], default="768p"),
+                                 io.Combo.Input("window_frames", options=[121, 90, 56, 22], default=121,
+                                                tooltip="Default context fits 124 frames. Shorter windows reduce working memory; independent windows may show seams."),
+                                 io.Combo.Input("vae_tile_size", options=[256, 192, 128, 384, 512], default=256),
+                                 io.Boolean.Input("sparse_attention", default=True, advanced=True,
+                                                  tooltip="Native block-sparse attention, tested on RTX 5090. Disable for dense attention."),
+                                 io.Float.Input("ic_strength", default=1., min=0., max=2., step=.05,
+                                                optional=True, advanced=True,
+                                                tooltip="Experimental IC LoRA strength. 1 is the publisher's value. Lower values need not preserve details better. At 0, the Ref2VA reference, HyperFlow and any Sharp remain active."),
+                                 io.Combo.Input("sampler", options=["up3", "up4"], default="up3",
+                                                optional=True, advanced=True,
+                                                tooltip="Published HyperFlow schedules: up3 uses 3 steps from noise 0.835; up4 uses 4 steps from 0.923. The timestep data supports both.")],
+                         outputs=[io.Image.Output("images"), io.String.Output("memory_info"), io.Float.Output("fps")])
+
+    @classmethod
+    def execute(cls, images, refiner, prompt, fps, width, height, seed, sharp_strength=1.,
+                input_size="768p", window_frames=121, vae_tile_size=256, sparse_attention=True,
+                ic_strength=1., sampler="up3"):
+        with ICRefiner(refiner.resolve(), refiner.text_encoder_device, vae_tile_size) as engine:
+            output, info = engine.frames(images, prompt, fps, width, height, seed, sharp_strength,
+                                         input_size, int(window_frames), sparse_attention, ic_strength, sampler)
+        return io.NodeOutput(output, info, 24.)

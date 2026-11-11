@@ -29,8 +29,8 @@ def register_model_paths():
     folder_paths.folder_names_and_paths["open_h3_upscalers"] = (paths, extensions | {".safetensors"})
 
 
-def model_names(kind):
-    tokens = {"base_model": ("minimax_h3", "fl2va", "pruned"),
+def model_names(kind, variant="fl2va"):
+    tokens = {"base_model": ("minimax_h3", variant, "pruned"),
               "text_encoder": ("qwen3vl", "minimax_h3"), "video_vae": ("minimax_h3", "video_vae"),
               "audio_vae": ("minimax_h3", "audio_vae"), "upscaler": ("minimax_h3_latent_upscaler_3d",)}
     return [name for name in folder_paths.get_filename_list(MODEL_CATEGORIES[kind])
@@ -89,6 +89,52 @@ class ModelSelection:
     def resolve(self):
         paths = {kind: resolve_model(kind, getattr(self, kind)) for kind in MODEL_CATEGORIES}
         paths["adapters"] = resolve_bundle(self.adapters)
+        return paths
+
+
+IC_BUNDLE_FILES = ("lora/open_h3_regenerate_2k_ic_lora.safetensors",
+                   "lora/minimax_h3_hyperflow_8step_v1.0.safetensors",
+                   "lora/minimax_h3_lms_v1.0_r64.safetensors",
+                   "assets/silence_audio_124f.safetensors", "ic_time.safetensors")
+
+
+def ic_bundle_names():
+    return sorted({p.name for root in bundle_roots() if root.is_dir() for p in root.iterdir()
+                   if p.is_dir() and (p / IC_BUNDLE_FILES[0]).is_file()})
+
+
+def resolve_ic_bundle(name):
+    if not name or Path(name).name != name or name in (".", ".."):
+        raise ValueError("Select an IC adapter folder from the loader list")
+    for root in bundle_roots():
+        directory = (root / name).resolve()
+        if not directory.is_relative_to(root):
+            continue
+        files = [directory / f for f in IC_BUNDLE_FILES]
+        if all(p.is_file() and p.resolve().is_relative_to(directory) for p in files):
+            return directory
+    raise FileNotFoundError(
+        "IC needs the three published adapters in lora/, assets/silence_audio_124f.safetensors "
+        "and prepared ic_time.safetensors. Source: https://huggingface.co/"
+        "Efficient-Large-Model/Open-H3-Regenerate-2K-IC . Run scripts/prepare_ic.py --help."
+    )
+
+
+@dataclass(frozen=True)
+class ICModelSelection:
+    base_model: str
+    text_encoder: str
+    video_vae: str
+    upscaler: str
+    adapters: str
+    text_encoder_device: str = "auto"
+
+    def resolve(self):
+        if "ref2va" not in Path(self.base_model).name.lower():
+            raise ValueError("IC requires the pruned Ref2VA base model")
+        paths = {kind: resolve_model(kind, getattr(self, kind))
+                 for kind in ("base_model", "text_encoder", "video_vae", "upscaler")}
+        paths["adapters"] = resolve_ic_bundle(self.adapters)
         return paths
 
 
